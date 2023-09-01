@@ -7,3 +7,5 @@ bs4
 tiktoken
 streamlit
 google-search-results
+requests
+google-serp-api

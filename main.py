@@ -1,5 +1,5 @@
 import os
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 from langchain import PromptTemplate
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
@@ -25,7 +25,6 @@ openai_api_key = os.environ.get("OPENAIAPIKEY")
 
 # 1. Tool for search
 from serpapi import GoogleSearch
-
 from datetime import datetime
 
 def search(query, starting_from=0):
