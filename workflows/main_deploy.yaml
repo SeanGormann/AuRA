@@ -1,0 +1,22 @@
+name: My Workflow
+
+on: [push, pull_request]  # This workflow will run on every push and pull request event
+
+jobs:
+  my-job:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Set up environment variables
+      run: |
+        echo OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} >> $GITHUB_ENV
+        echo SERP_API_KEY=${{ secrets.SERP_API_KEY }} >> $GITHUB_ENV
+        echo BROWSERLESS_API_KEY=${{ secrets.BROWSERLESS_API_KEY }} >> $GITHUB_ENV
+
+    # Now, any subsequent steps can use these environment variables.
+    - name: Run my script
+      run: |
+        python main.py
