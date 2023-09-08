@@ -23,7 +23,7 @@ brwoserless_api_key = os.environ.get("BROWSERLESSAPIKEY")
 serper_api_key = os.environ.get("SERPAPIKEY")
 openai_api_key = os.environ.get("OPENAIAPIKEY")
 
-# 1. Tool for search
+# Search Tool
 from serpapi import GoogleSearch
 from datetime import datetime
 
@@ -60,13 +60,10 @@ def search(combined_input, starting_from=0):
             params["asylo"] = str(current_year - starting_from)
 
         # If you want articles from the last year sorted by date, you can use the scisbd parameter
-        # params["scisbd"] = "1"  # This will include only abstracts from the last year sorted by date
-
+        # params["scisbd"] = "1"  # This will include only articles from the last year sorted by date
         search_instance = GoogleSearch(params)
         results = search_instance.get_dict()
         
-        # Format the results
-        #formatted_results = {"output": str(results)}
         return results #formatted_results
 
     except Exception as e:
@@ -74,31 +71,29 @@ def search(combined_input, starting_from=0):
         return {"error": f"Failed to fetch search results: {str(e)}", "output": f"Error: {str(e)}"}
 
 
-# 2. Tool for scraping
+# Scraping Tool
 def scrape_website(objective: str, url: str):
-    # scrape website, and also will summarize the content based on objective if the content is too large
-    # objective is the original objective & task that user give to the agent, url is the url of the website to be scraped
-
     print("Scraping website...")
-    # Define the headers for the request
+
+    # Define request headers 
     headers = {
         'Cache-Control': 'no-cache',
         'Content-Type': 'application/json',
     }
 
-    # Define the data to be sent in the request
+    # Define the data to be sent 
     data = {
         "url": url
     }
 
-    # Convert Python object to JSON string
+    # Python --> JSON 
     data_json = json.dumps(data)
 
-    # Send the POST request
+    # Send POST request
     post_url = f"https://chrome.browserless.io/content?token={brwoserless_api_key}"
     response = requests.post(post_url, headers=headers, data=data_json)
 
-    # Check the response status code
+    # Error handling
     if response.status_code == 200:
         soup = BeautifulSoup(response.content, "html.parser")
         text = soup.get_text()
@@ -112,18 +107,20 @@ def scrape_website(objective: str, url: str):
     else:
         print(f"HTTP request failed with status code {response.status_code}")
 
-
+# Function for summarizing
 def summary(objective, content):
     llm = ChatOpenAI(openai_api_key = openai_api_key, temperature=0, model="gpt-3.5-turbo-16k-0613")
 
     text_splitter = RecursiveCharacterTextSplitter(
         separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
     docs = text_splitter.create_documents([content])
+    
     map_prompt = """
     Write a summary of the following text for {objective}:
     "{text}"
     SUMMARY:
     """
+    
     map_prompt_template = PromptTemplate(
         template=map_prompt, input_variables=["text", "objective"])
 
@@ -159,7 +156,7 @@ class ScrapeWebsiteTool(BaseTool):
         raise NotImplementedError("error here")
 
 
-# 3. Create langchain agent with the tools above
+# Create langchain agent with the tools above
 tools = [
     Tool(
         name="Search",
@@ -169,6 +166,7 @@ tools = [
     ScrapeWebsiteTool(),
 ]
 
+# Modify the system message to include the guidelines, reduce hallucinations and provide sources
 system_message = SystemMessage(
     content="""Welcome, esteemed researcher! Your expertise spans the realms of scientific inquiry, enabling you to delve into intricate research across various domains and yield empirically grounded results. Your commitment is unwavering: you meticulously gather and analyze data to underpin your investigations.
 
@@ -200,13 +198,14 @@ agent = initialize_agent(
     memory=memory,
 )
 
+# Function for calling the agent
 def call_agent(query, starting_from):
     combined_input = f"{query}, {str(starting_from)}"
     print(f"Combined Input: {combined_input}")
     return agent({"input": combined_input})
 
-
-# 4. Use streamlit to create a web app
+# ----------------------------
+# Use streamlit to create a web app
 import streamlit as st
 
 st.set_page_config(page_title="Aura", page_icon=":scientist:")
