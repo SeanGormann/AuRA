@@ -27,20 +27,26 @@ openai_api_key = os.environ.get("OPENAIAPIKEY")
 from serpapi import GoogleSearch
 from datetime import datetime
 
-def search(query, starting_from=0):
+def search(combined_input, starting_from=0):
     # Split the combined input by comma
     parts = combined_input.split(", ")
     
-    # Extract the query and starting_from values
-    query = ", ".join(parts[:-1])  # This takes all parts of the split except the last one, in case the query itself contains commas
-    try:
-        starting_from = int(parts[-1].strip())  # Convert the last part to integer
-        if not (0 <= starting_from <= 20):
-            raise ValueError("Value out of range")
-    except ValueError:
-        print(f"Invalid 'starting_from' value: {parts[-1]}")
-        return {"error": f"Invalid 'starting_from' value: {parts[-1]}", "output": f"Error: Invalid 'starting_from' value: {parts[-1]}"}
+    # If there's only one part, it's just the query
+    if len(parts) == 1:
+        query = parts[0]
+        starting_from = 0
+    else:
+        # Extract the query and starting_from values
+        query = ", ".join(parts[:-1])  # This takes all parts of the split except the last one
+        try:
+            starting_from = int(parts[-1].strip())  # Convert the last part to integer
+            if not (0 <= starting_from <= 20):
+                raise ValueError("Value out of range")
+        except ValueError:
+            print(f"Invalid 'starting_from' value: {parts[-1]}")
+            return {"error": f"Invalid 'starting_from' value: {parts[-1]}", "output": f"Error: Invalid 'starting_from' value: {parts[-1]}"}
 
+    print(f"Searching for '{query}' starting from {starting_from}")
     try:
         params = {
             "engine": "google_scholar",
@@ -196,7 +202,7 @@ agent = initialize_agent(
 
 def call_agent(query, starting_from):
     combined_input = f"{query}, {str(starting_from)}"
-    print(type(combined_input))
+    print(f"Combined Input: {combined_input}")
     return agent({"input": combined_input})
 
 
