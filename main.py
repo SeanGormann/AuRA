@@ -28,6 +28,19 @@ from serpapi import GoogleSearch
 from datetime import datetime
 
 def search(query, starting_from=0):
+    # Split the combined input by comma
+    parts = combined_input.split(", ")
+    
+    # Extract the query and starting_from values
+    query = ", ".join(parts[:-1])  # This takes all parts of the split except the last one, in case the query itself contains commas
+    try:
+        starting_from = int(parts[-1].strip())  # Convert the last part to integer
+        if not (0 <= starting_from <= 20):
+            raise ValueError("Value out of range")
+    except ValueError:
+        print(f"Invalid 'starting_from' value: {parts[-1]}")
+        return {"error": f"Invalid 'starting_from' value: {parts[-1]}", "output": f"Error: Invalid 'starting_from' value: {parts[-1]}"}
+
     try:
         params = {
             "engine": "google_scholar",
@@ -53,9 +66,6 @@ def search(query, starting_from=0):
     except Exception as e:
         print(f"Error encountered while searching: {e}")
         return {"error": f"Failed to fetch search results: {str(e)}", "output": f"Error: {str(e)}"}
-
-# Example usage:
-# results = search("quantum physics", starting_from=2)  # This will search for articles from the last 2 years
 
 
 # 2. Tool for scraping
@@ -248,18 +258,3 @@ def main():
 if __name__ == '__main__':
     main()
 
-
-# 5. Set this as an API endpoint via FastAPI
-app = FastAPI()
-
-
-class Query(BaseModel):
-    query: str
-
-
-@app.post("/")
-def researchAgent(query: Query):
-    query = query.query
-    content = agent({"input": query})
-    actual_content = content['output']
-    return actual_content
