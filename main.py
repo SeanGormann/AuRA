@@ -108,7 +108,7 @@ def scrape_website(objective: str, url: str):
         print(f"HTTP request failed with status code {response.status_code}")
 
 # Function for summarizing
-def summary(objective, content):
+def summary_old(objective, content):
     llm = ChatOpenAI(openai_api_key = openai_api_key, temperature=0, model="gpt-3.5-turbo-16k-0613")
 
     text_splitter = RecursiveCharacterTextSplitter(
@@ -133,6 +133,41 @@ def summary(objective, content):
     )
 
     output = summary_chain.run(input_documents=docs, objective=objective)
+
+    return output
+
+
+# Function for summarizing
+def summary(objective, content):
+    llm = ChatOpenAI(openai_api_key=openai_api_key, temperature=0, model="gpt-3.5-turbo-16k-0613")
+
+    text_splitter = RecursiveCharacterTextSplitter(
+        separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
+    docs = text_splitter.create_documents([content])
+    
+    map_prompt = """
+    Write a summary of the following text for {objective}:
+    "{text}"
+    SUMMARY:
+    """
+    
+    map_prompt_template = PromptTemplate(
+        template=map_prompt, input_variables=["text", "objective"])
+
+    summary_chain = load_summarize_chain(
+        llm=llm,
+        chain_type='map_reduce',
+        map_prompt=map_prompt_template,
+        combine_prompt=map_prompt_template,
+        verbose=True
+    )
+
+    output = summary_chain.run(input_documents=docs, objective=objective)
+
+    # Check if the output exceeds 16k tokens and truncate if necessary
+    max_tokens = 16000
+    if len(output["choices"]["text"].split()) > max_tokens:
+        output["choices"]["text"] = ' '.join(output["choices"]["text"].split()[:max_tokens])
 
     return output
 
@@ -260,6 +295,8 @@ def main():
     st.sidebar.write("Email: seangorman117@gmail.com")
     st.sidebar.write("GitHub: https://github.com/SeanGormann")
 
-if __name__ == '__main__':
+"""if __name__ == '__main__':
     main()
+"""
 
+call_agent("Is taurine good for health?", 0)
