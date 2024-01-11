@@ -295,8 +295,5 @@ def main():
     st.sidebar.write("Email: seangorman117@gmail.com")
     st.sidebar.write("GitHub: https://github.com/SeanGormann")
 
-"""if __name__ == '__main__':
+if __name__ == '__main__':
     main()
-"""
-
-call_agent("Is taurine good for health?", 0)
