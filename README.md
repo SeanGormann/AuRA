@@ -23,7 +23,6 @@ Here's what type of results to be expected:
 </div>
 
 
-
 ---
 
 We have a simple UI to but achieve a complex task under the hood. Enter any scientifically oriented topic and we'll scour through Google Scholar for the most relevant papers for you. Citing sources is essential for true scientific rigour, and that's exactly what AuRA will provide to you. Future iterations will be able to email you with weekly reports of your research topic of choice, so you can stay as up to date as possible on what matters most to you. 
