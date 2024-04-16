@@ -248,7 +248,9 @@ st.set_page_config(page_title="Aura", page_icon=":scientist:")
 def main():
     # Sidebar menu
     st.sidebar.title("Menu")
-    page_selection = st.sidebar.selectbox("Choose Page", ["Welcome!", "AuRA"])
+
+    page_selection = st.sidebar.selectbox("Choose Page", ["AuRA", "Welcome!"])
+
 
     # Add a slider to the sidebar for selecting years to look back
     st.sidebar.write("How far do you want me to look back?")
