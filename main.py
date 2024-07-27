@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 import requests
 import json
 from langchain.schema import SystemMessage
-from fastapi import FastAPI
+#from fastapi import FastAPI
 import streamlit as st
 
 #load_dotenv()
@@ -234,12 +234,11 @@ st.set_page_config(page_title="Aura", page_icon=":scientist:")
 def main():
     # Sidebar menu
     st.sidebar.title("Menu")
-    page_selection = st.sidebar.selectbox("Choose Page", ["Welcome!", "AuRA"])
+    page_selection = st.sidebar.selectbox("Choose Page", ["AuRA", "Welcome!"])
 
     # Add a slider to the sidebar for selecting years to look back
     st.sidebar.write("How far do you want me to look back?")
     years_ago = st.sidebar.slider("Years ago", 0, 20, 0)  # Slider from 0 to 20 with default value set to 0
-
 
     if page_selection == "Welcome!":
         # Display Landing Page content here
