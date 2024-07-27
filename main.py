@@ -27,6 +27,8 @@ openai_api_key = os.environ.get("OPENAIAPIKEY")
 from serpapi import GoogleSearch
 from datetime import datetime
 
+
+#### Tool for searching
 def search(combined_input, starting_from=0):
     # Split the combined input by comma
     parts = combined_input.split(", ")
@@ -71,7 +73,45 @@ def search(combined_input, starting_from=0):
         return {"error": f"Failed to fetch search results: {str(e)}", "output": f"Error: {str(e)}"}
 
 
-# Scraping Tool
+
+#### Tool for summarizing content
+def summary(objective, content):
+    llm = ChatOpenAI(openai_api_key=openai_api_key, temperature=0, model="gpt-3.5-turbo-16k-0613")
+
+    text_splitter = RecursiveCharacterTextSplitter(
+        separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
+    docs = text_splitter.create_documents([content])
+    
+    map_prompt = """
+    Write a summary of the following text for {objective}:
+    "{text}"
+    SUMMARY:
+    """
+    
+    map_prompt_template = PromptTemplate(
+        template=map_prompt, input_variables=["text", "objective"])
+
+    summary_chain = load_summarize_chain(
+        llm=llm,
+        chain_type='map_reduce',
+        map_prompt=map_prompt_template,
+        combine_prompt=map_prompt_template,
+        verbose=True
+    )
+
+    output = summary_chain.run(input_documents=docs, objective=objective)
+
+    # Check if the output exceeds 16k tokens and truncate if necessary
+    max_tokens = 16000
+    if len(output["choices"]["text"].split()) > max_tokens:
+        output["choices"]["text"] = ' '.join(output["choices"]["text"].split()[:max_tokens])
+
+    return output
+
+
+
+
+#### Tool for scraping website
 def scrape_website(objective: str, url: str):
     print("Scraping website...")
 
@@ -107,70 +147,6 @@ def scrape_website(objective: str, url: str):
     else:
         print(f"HTTP request failed with status code {response.status_code}")
 
-# Function for summarizing
-def summary_old(objective, content):
-    llm = ChatOpenAI(openai_api_key = openai_api_key, temperature=0, model="gpt-3.5-turbo-16k-0613")
-
-    text_splitter = RecursiveCharacterTextSplitter(
-        separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
-    docs = text_splitter.create_documents([content])
-    
-    map_prompt = """
-    Write a summary of the following text for {objective}:
-    "{text}"
-    SUMMARY:
-    """
-    
-    map_prompt_template = PromptTemplate(
-        template=map_prompt, input_variables=["text", "objective"])
-
-    summary_chain = load_summarize_chain(
-        llm=llm,
-        chain_type='map_reduce',
-        map_prompt=map_prompt_template,
-        combine_prompt=map_prompt_template,
-        verbose=True
-    )
-
-    output = summary_chain.run(input_documents=docs, objective=objective)
-
-    return output
-
-
-# Function for summarizing
-def summary(objective, content):
-    llm = ChatOpenAI(openai_api_key=openai_api_key, temperature=0, model="gpt-3.5-turbo-16k-0613")
-
-    text_splitter = RecursiveCharacterTextSplitter(
-        separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
-    docs = text_splitter.create_documents([content])
-    
-    map_prompt = """
-    Write a summary of the following text for {objective}:
-    "{text}"
-    SUMMARY:
-    """
-    
-    map_prompt_template = PromptTemplate(
-        template=map_prompt, input_variables=["text", "objective"])
-
-    summary_chain = load_summarize_chain(
-        llm=llm,
-        chain_type='map_reduce',
-        map_prompt=map_prompt_template,
-        combine_prompt=map_prompt_template,
-        verbose=True
-    )
-
-    output = summary_chain.run(input_documents=docs, objective=objective)
-
-    # Check if the output exceeds 16k tokens and truncate if necessary
-    max_tokens = 16000
-    if len(output["choices"]["text"].split()) > max_tokens:
-        output["choices"]["text"] = ' '.join(output["choices"]["text"].split()[:max_tokens])
-
-    return output
-
 
 class ScrapeWebsiteInput(BaseModel):
     """Inputs for scrape_website"""
@@ -201,7 +177,9 @@ tools = [
     ScrapeWebsiteTool(),
 ]
 
-# Modify the system message to include the guidelines, reduce hallucinations and provide sources
+
+
+#### Modify the system message to include the guidelines, reduce hallucinations and provide sources
 system_message = SystemMessage(
     content="""Welcome, esteemed researcher! Your expertise spans the realms of scientific inquiry, enabling you to delve into intricate research across various domains and yield empirically grounded results. Your commitment is unwavering: you meticulously gather and analyze data to underpin your investigations.
 
@@ -214,12 +192,13 @@ system_message = SystemMessage(
     6/ Reiterate: ensure that your final deliverable meticulously cites all sources, bolstering your research's credibility and validity."""
 )
 
-
 agent_kwargs = {
     "extra_prompt_messages": [MessagesPlaceholder(variable_name="memory")],
     "system_message": system_message,
 }
 
+
+##### Define Agent
 llm = ChatOpenAI(openai_api_key = openai_api_key, temperature=0, model="gpt-3.5-turbo-16k-0613")
 memory = ConversationSummaryBufferMemory(
     memory_key="memory", return_messages=True, llm=llm, max_token_limit=1000)
@@ -233,11 +212,18 @@ agent = initialize_agent(
     memory=memory,
 )
 
-# Function for calling the agent
+
+
+#### Function for calling the agent
 def call_agent(query, starting_from):
     combined_input = f"{query}, {str(starting_from)}"
     print(f"Combined Input: {combined_input}")
     return agent({"input": combined_input})
+
+
+
+
+
 
 # ----------------------------
 # Use streamlit to create a web app
